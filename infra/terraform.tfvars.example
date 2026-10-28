@@ -1,0 +1,13 @@
+aws_region = "eu-west-2"
+# Paste the EXACT sub printed by the OIDC identity workflow. This example uses the older format.
+# Newly created repositories may include @OWNER_ID and @REPOSITORY_ID; do not guess.
+github_oidc_subject = "repo:SivakrishnaManoj/ReviewOPs:ref:refs/heads/main"
+# Set this if GitHub's OIDC provider already exists in your AWS account.
+# existing_github_oidc_provider_arn = "arn:aws:iam::YOUR_ACCOUNT_ID:oidc-provider/token.actions.githubusercontent.com"
+enable_service = false
+# After publishing the first image, set enable_service=true and paste the digest URI:
+# initial_image = "ACCOUNT.dkr.ecr.eu-west-2.amazonaws.com/reviewops-demo@sha256:DIGEST"
+# Optional: public subnets from at least two AZs. Otherwise the default VPC must exist.
+# subnet_ids = ["subnet-...", "subnet-..."]
+# Optional later: existing Secrets Manager secrets; never paste their values here.
+# container_secret_arns = { DATABASE_URL = "arn:aws:secretsmanager:..." }

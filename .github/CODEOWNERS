@@ -1,0 +1,8 @@
+# Add the other two GitHub usernames before assigning their folders.
+/.github/ @SivakrishnaManoj
+/infra/ @SivakrishnaManoj
+/Dockerfile @SivakrishnaManoj
+/compose.yaml @SivakrishnaManoj
+/scripts/deploy.py @SivakrishnaManoj
+# /src/reviewops/ai/ @AI_TEAMMATE
+# /src/reviewops/retrieval/ @DATA_TEAMMATE
