@@ -86,7 +86,7 @@ jobs:
           done
           # Promote the exact tested image rather than rebuilding in the delivery job.
           docker save "reviewops:$COMMIT_SHA" | gzip > image.tar.gz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: github.ref == 'refs/heads/main' && vars.AWS_DELIVERY_ENABLED == 'true'
         with:
           name: image-${{ github.sha }}
@@ -150,7 +150,7 @@ jobs:
           IMAGE: ${{ steps.publish.outputs.image }}
           COMMIT_SHA: ${{ github.sha }}
         run: uv run python -m scripts.deploy --service-arn "$SERVICE_ARN" --image "$IMAGE" --sha "$COMMIT_SHA"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: deployment-${{ github.run_id }}-${{ github.run_attempt }}
