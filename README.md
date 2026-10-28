@@ -80,9 +80,9 @@ When adding a dependency, edit `pyproject.toml`, run `uv lock`, and commit both 
 
 | Owner | Files |
 | --- | --- |
-| S. — cloud and delivery | `infra/`, `.github/`, `Dockerfile`, `compose.yaml`, deployment scripts |
-| AI/application teammate | `src/reviewops/ai/`, API integration, `web/` |
-| Data/retrieval teammate | `pipelines/`, `src/reviewops/retrieval/`, ingestion and index migrations |
+| Siva. - cloud and delivery | `infra/`, `.github/`, `Dockerfile`, `compose.yaml`, deployment scripts |
+| AI/application Johann J | `src/reviewops/ai/`, API integration, `web/` |
+| Data/retrieval Sweta A | `pipelines/`, `src/reviewops/retrieval/`, ingestion and index migrations |
 | Shared, agree before changing | `contracts.py`, schema migrations, `pyproject.toml`, `uv.lock` |
 
 Use branches such as `feat/agent-workflow`, `feat/retrieval`, and `chore/cloud-backbone`.
