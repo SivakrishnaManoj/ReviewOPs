@@ -25,9 +25,13 @@ class SeenReviews:
         ).fetchone()
         if existing:
             return "duplicates" if existing[0] == review.content_hash else "identity_conflicts"
-        self.connection.execute("INSERT INTO seen VALUES (?, ?)", (
-            review.review_id, review.content_hash,
-        ))
+        self.connection.execute(
+            "INSERT INTO seen VALUES (?, ?)",
+            (
+                review.review_id,
+                review.content_hash,
+            ),
+        )
         return None
 
     def __exit__(self, *_):
@@ -72,11 +76,20 @@ def process(stream, *, limit=200, product_ids=(), batch_size=500, sink=None, ins
     if limit < 0 or not 1 <= batch_size <= 5000:
         raise ValueError("Invalid limit or batch size")
     selected = set(product_ids)
-    counts = Counter({
-        "rows_seen": 0, "rejected": 0, "filtered": 0, "duplicates": 0,
-        "identity_conflicts": 0, "valid_unique": 0, "rating_only": 0,
-        "inserted": 0, "already_present": 0, "database_conflicts": 0,
-    })
+    counts = Counter(
+        {
+            "rows_seen": 0,
+            "rejected": 0,
+            "filtered": 0,
+            "duplicates": 0,
+            "identity_conflicts": 0,
+            "valid_unique": 0,
+            "rating_only": 0,
+            "inserted": 0,
+            "already_present": 0,
+            "database_conflicts": 0,
+        }
+    )
     reasons = Counter()
     inspector = Inspector() if inspect else None
     batch, rejections = [], []
@@ -122,9 +135,12 @@ def process(stream, *, limit=200, product_ids=(), batch_size=500, sink=None, ins
     # Conservatively mark a scan that hits its cap as partial, even at an exact EOF boundary.
     exhausted = limit == 0 or counts["rows_seen"] < limit
     result = {
-        **dict(counts), "rejection_reasons": dict(reasons),
-        "input_exhausted": exhausted, "scan_limit": limit,
-        "product_filter": sorted(selected), "negative_rating_definition": [1, 2],
+        **dict(counts),
+        "rejection_reasons": dict(reasons),
+        "input_exhausted": exhausted,
+        "scan_limit": limit,
+        "product_filter": sorted(selected),
+        "negative_rating_definition": [1, 2],
         "coverage": "selected products in this input; not all Amazon reviews",
     }
     if inspector is not None:
@@ -170,13 +186,25 @@ class PostgresSink:
                 with self.connection.cursor() as cursor:
                     with cursor.copy("COPY ingestion_stage FROM STDIN") as copy:
                         for line, digest, review in batch:
-                            copy.write_row((
-                                review.review_id, review.product_id, review.title, review.body,
-                                review.rating, review.reviewed_at, self.dataset_version,
-                                "amazon_reviews_2023", review.asin, review.content_hash,
-                                review.has_text, review.verified_purchase, line,
-                                self.run_id, digest,
-                            ))
+                            copy.write_row(
+                                (
+                                    review.review_id,
+                                    review.product_id,
+                                    review.title,
+                                    review.body,
+                                    review.rating,
+                                    review.reviewed_at,
+                                    self.dataset_version,
+                                    "amazon_reviews_2023",
+                                    review.asin,
+                                    review.content_hash,
+                                    review.has_text,
+                                    review.verified_purchase,
+                                    line,
+                                    self.run_id,
+                                    digest,
+                                )
+                            )
                 added = self.connection.execute("""
                     INSERT INTO reviews
                     (review_id, product_id, title, body, rating, reviewed_at, dataset_version,
@@ -198,8 +226,9 @@ class PostgresSink:
                 delta["inserted"] = len(added)
                 delta["database_conflicts"] = len(conflicts)
                 delta["already_present"] = len(batch) - len(added) - len(conflicts)
-                rejected.extend((line, "database_identity_conflict", digest)
-                                for line, digest in conflicts)
+                rejected.extend(
+                    (line, "database_identity_conflict", digest) for line, digest in conflicts
+                )
             if rejected:
                 with self.connection.cursor() as cursor:
                     cursor.executemany(
@@ -217,8 +246,10 @@ class PostgresSink:
     def finish(self, summary=None):
         from psycopg.types.json import Jsonb
 
-        status = "failed" if summary is None else (
-            "complete" if summary["input_exhausted"] else "partial"
+        status = (
+            "failed"
+            if summary is None
+            else ("complete" if summary["input_exhausted"] else "partial")
         )
         with self.connection.transaction():
             self.connection.execute(

@@ -81,8 +81,10 @@ def normalize(raw):
         raise InvalidRecord("invalid_timestamp")
     if "timestamp" in raw and "sort_timestamp" in raw and raw["sort_timestamp"] != timestamp:
         raise InvalidRecord("conflicting_timestamps")
-    if not int(MIN_TIMESTAMP.timestamp() * 1000) <= timestamp < int(
-        MAX_TIMESTAMP.timestamp() * 1000
+    if (
+        not int(MIN_TIMESTAMP.timestamp() * 1000)
+        <= timestamp
+        < int(MAX_TIMESTAMP.timestamp() * 1000)
     ):
         raise InvalidRecord("timestamp_outside_dataset")
     reviewed_at = datetime.fromtimestamp(timestamp / 1000, UTC)
@@ -100,7 +102,14 @@ def normalize(raw):
         separators=(",", ":"),
     )
     return Review(
-        review_id, product_id, asin, title, body, int(rating), reviewed_at, verified,
+        review_id,
+        product_id,
+        asin,
+        title,
+        body,
+        int(rating),
+        reviewed_at,
+        verified,
         hashlib.sha256(content.encode()).hexdigest(),
     )
 

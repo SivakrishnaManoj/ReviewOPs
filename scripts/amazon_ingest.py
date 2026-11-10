@@ -53,7 +53,9 @@ def main(argv=None):
             if not dsn or not dsn.get_secret_value():
                 raise ValueError("Database configuration missing")
             connection_context = psycopg.connect(
-                dsn.get_secret_value(), autocommit=True, connect_timeout=10,
+                dsn.get_secret_value(),
+                autocommit=True,
+                connect_timeout=10,
                 options="-c statement_timeout=60000 -c lock_timeout=10000",
             )
         with connection_context as connection:
@@ -62,14 +64,22 @@ def main(argv=None):
             try:
                 with open_source(args.category, args.input) as stream:
                     report = process(
-                        stream, limit=args.limit, product_ids=args.product_id,
-                        batch_size=args.batch_size, sink=sink, inspect=args.mode != "ingest",
+                        stream,
+                        limit=args.limit,
+                        product_ids=args.product_id,
+                        batch_size=args.batch_size,
+                        sink=sink,
+                        inspect=args.mode != "ingest",
                     )
-                report.update({
-                    "source": SOURCE, "category": args.category, "dataset_version": dataset_version,
-                    "input_kind": "local" if args.input else "publisher_https_stream",
-                    "mode": args.mode,
-                })
+                report.update(
+                    {
+                        "source": SOURCE,
+                        "category": args.category,
+                        "dataset_version": dataset_version,
+                        "input_kind": "local" if args.input else "publisher_https_stream",
+                        "mode": args.mode,
+                    }
+                )
                 if sink is not None:
                     report["run_id"] = str(sink.run_id)
                     sink.finish(report)
@@ -80,20 +90,34 @@ def main(argv=None):
         contents = save_report(report, args.report)
         if args.report:
             # Aggregate status only. Full inspection output is in the explicitly requested report.
-            keys = ("rows_seen", "valid_unique", "rejected", "duplicates", "identity_conflicts",
-                    "inserted", "already_present", "database_conflicts", "input_exhausted")
+            keys = (
+                "rows_seen",
+                "valid_unique",
+                "rejected",
+                "duplicates",
+                "identity_conflicts",
+                "inserted",
+                "already_present",
+                "database_conflicts",
+                "input_exhausted",
+            )
             print(json.dumps({key: report[key] for key in keys}))
         else:
             print(contents, end="")
         return 0
     except Exception as exc:
         # Never echo exception messages: DSNs, raw review text and URLs may be included.
-        print(json.dumps({
-            "status": "failed", "error_type": type(exc).__name__,
-            "run_id": str(sink.run_id) if sink is not None else None,
-            "message": "Check input/network and database migrations/configuration. "
-                       "Committed batches are retained; rerun to safely skip existing rows.",
-        }))
+        print(
+            json.dumps(
+                {
+                    "status": "failed",
+                    "error_type": type(exc).__name__,
+                    "run_id": str(sink.run_id) if sink is not None else None,
+                    "message": "Check input/network and database migrations/configuration. "
+                    "Committed batches are retained; rerun to safely skip existing rows.",
+                }
+            )
+        )
         return 1
 
 

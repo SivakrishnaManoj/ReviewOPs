@@ -14,8 +14,12 @@ from scripts.amazon_ingest import arguments, main
 
 def example(**changes):
     record = {
-        "parent_asin": "B000000001", "asin": "B000000002", "user_id": "synthetic-user-1",
-        "timestamp": 1672531200000, "rating": 2.0, "title": "Damaged",
+        "parent_asin": "B000000001",
+        "asin": "B000000002",
+        "user_id": "synthetic-user-1",
+        "timestamp": 1672531200000,
+        "rating": 2.0,
+        "title": "Damaged",
         "text": "The cap was broken.<br />It leaked &amp; made a mess.",
         "verified_purchase": True,
     }
@@ -115,12 +119,20 @@ class StreamTests(unittest.TestCase):
 
 class PipelineTests(unittest.TestCase):
     def test_dedup_conflict_filters_and_coverage(self):
-        report = process(stream(
-            example(), example(), example(text="A conflicting edit"),
-            example(user_id="different person"),
-            example(user_id="rating-only", text="", title=""),
-            example(parent_asin="B000000099"), example(rating=6),
-        ), product_ids=["B000000001"], inspect=True, batch_size=1)
+        report = process(
+            stream(
+                example(),
+                example(),
+                example(text="A conflicting edit"),
+                example(user_id="different person"),
+                example(user_id="rating-only", text="", title=""),
+                example(parent_asin="B000000099"),
+                example(rating=6),
+            ),
+            product_ids=["B000000001"],
+            inspect=True,
+            batch_size=1,
+        )
         self.assertEqual(report["rows_seen"], 7)
         self.assertEqual(report["duplicates"], 1)
         self.assertEqual(report["identity_conflicts"], 1)
@@ -159,9 +171,18 @@ class PipelineTests(unittest.TestCase):
             report = Path(directory) / "report.json"
             path.write_bytes(stream(example()).getvalue())
             with patch("builtins.print"):
-                self.assertEqual(main([
-                    "inspect", "--input", str(path), "--report", str(report),
-                ]), 0)
+                self.assertEqual(
+                    main(
+                        [
+                            "inspect",
+                            "--input",
+                            str(path),
+                            "--report",
+                            str(report),
+                        ]
+                    ),
+                    0,
+                )
             self.assertEqual(json.loads(report.read_text())["valid_unique"], 1)
 
     def test_cli_sanitizes_failures(self):

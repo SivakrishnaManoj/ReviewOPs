@@ -20,12 +20,18 @@ def test_import_is_repeatable_and_conflicts_are_audited():
     migrate(dsn)
     user = "test-" + uuid.uuid4().hex
     record = {
-        "parent_asin": "B000000001", "asin": "B000000002", "user_id": user,
-        "timestamp": 1672531200000, "rating": 1, "title": "", "text": "Synthetic broken cap",
+        "parent_asin": "B000000001",
+        "asin": "B000000002",
+        "user_id": user,
+        "timestamp": 1672531200000,
+        "rating": 1,
+        "title": "",
+        "text": "Synthetic broken cap",
     }
     versions = "synthetic-test/" + uuid.uuid4().hex
     run_ids = []
     with psycopg.connect(dsn, autocommit=True) as connection:
+
         def run(rows):
             sink = PostgresSink(connection, "All_Beauty", versions, {})
             run_ids.append(sink.run_id)
@@ -35,8 +41,14 @@ def test_import_is_repeatable_and_conflicts_are_audited():
             return report
 
         try:
-            initial = run([record, record, record | {"rating": 7},
-                           record | {"user_id": user + "-2", "text": ""}])
+            initial = run(
+                [
+                    record,
+                    record,
+                    record | {"rating": 7},
+                    record | {"user_id": user + "-2", "text": ""},
+                ]
+            )
             assert initial["inserted"] == 2
             assert initial["duplicates"] == 1
             assert initial["rejected"] == 1
@@ -46,21 +58,31 @@ def test_import_is_repeatable_and_conflicts_are_audited():
             changed = run([record | {"text": "Conflicting edit"}])
             assert changed["database_conflicts"] == 1
             assert changed["inserted"] == 0
-            assert connection.execute(
-                "SELECT COUNT(*) FROM reviews WHERE dataset_version = %s", (versions,),
-            ).fetchone()[0] == 2
-            assert connection.execute(
-                "SELECT COUNT(*) FROM reviews WHERE dataset_version = %s AND NOT has_text",
-                (versions,),
-            ).fetchone()[0] == 1
+            assert (
+                connection.execute(
+                    "SELECT COUNT(*) FROM reviews WHERE dataset_version = %s",
+                    (versions,),
+                ).fetchone()[0]
+                == 2
+            )
+            assert (
+                connection.execute(
+                    "SELECT COUNT(*) FROM reviews WHERE dataset_version = %s AND NOT has_text",
+                    (versions,),
+                ).fetchone()[0]
+                == 1
+            )
             reasons = connection.execute(
-                "SELECT reason FROM ingestion_rejections WHERE run_id = ANY(%s)", (run_ids,),
+                "SELECT reason FROM ingestion_rejections WHERE run_id = ANY(%s)",
+                (run_ids,),
             ).fetchall()
             assert sorted(row[0] for row in reasons) == [
-                "database_identity_conflict", "invalid_rating",
+                "database_identity_conflict",
+                "invalid_rating",
             ]
             assert connection.execute(
-                "SELECT DISTINCT status FROM ingestion_runs WHERE run_id = ANY(%s)", (run_ids,),
+                "SELECT DISTINCT status FROM ingestion_runs WHERE run_id = ANY(%s)",
+                (run_ids,),
             ).fetchall() == [("complete",)]
 
             # A failed batch must roll back both its inserted reviews and rejection audit.
@@ -70,13 +92,21 @@ def test_import_is_repeatable_and_conflicts_are_audited():
             invalid = replace(good, review_id=good.review_id + "-bad", rating=6)
             with pytest.raises(psycopg.errors.CheckViolation):
                 failed_sink.write([(1, "hash", good), (2, "hash", invalid)], [])
-            assert connection.execute(
-                "SELECT COUNT(*) FROM reviews WHERE review_id = %s", (good.review_id,),
-            ).fetchone()[0] == 0
+            assert (
+                connection.execute(
+                    "SELECT COUNT(*) FROM reviews WHERE review_id = %s",
+                    (good.review_id,),
+                ).fetchone()[0]
+                == 0
+            )
             failed_sink.finish()
-            assert connection.execute(
-                "SELECT status FROM ingestion_runs WHERE run_id = %s", (failed_sink.run_id,),
-            ).fetchone()[0] == "failed"
+            assert (
+                connection.execute(
+                    "SELECT status FROM ingestion_runs WHERE run_id = %s",
+                    (failed_sink.run_id,),
+                ).fetchone()[0]
+                == "failed"
+            )
 
             # A broken source after a committed batch retains that batch for safe replay.
             partial_sink = PostgresSink(connection, "All_Beauty", versions, {})
@@ -91,8 +121,12 @@ def test_import_is_repeatable_and_conflicts_are_audited():
 
             interrupted = record | {"user_id": user + "-interrupted"}
             with pytest.raises(OSError):
-                process(BrokenStream(json.dumps(interrupted).encode() + b"\n"),
-                        limit=0, batch_size=1, sink=partial_sink)
+                process(
+                    BrokenStream(json.dumps(interrupted).encode() + b"\n"),
+                    limit=0,
+                    batch_size=1,
+                    sink=partial_sink,
+                )
             partial_sink.finish()
             replay = run([interrupted])
             assert replay["already_present"] == 1
@@ -100,6 +134,7 @@ def test_import_is_repeatable_and_conflicts_are_audited():
         finally:
             connection.execute("DELETE FROM reviews WHERE dataset_version = %s", (versions,))
             connection.execute(
-                "DELETE FROM ingestion_rejections WHERE run_id = ANY(%s)", (run_ids,),
+                "DELETE FROM ingestion_rejections WHERE run_id = ANY(%s)",
+                (run_ids,),
             )
             connection.execute("DELETE FROM ingestion_runs WHERE run_id = ANY(%s)", (run_ids,))
