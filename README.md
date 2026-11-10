@@ -11,15 +11,28 @@ Create feature branches from `main` and use pull requests for subsequent changes
 - FastAPI process health, database readiness, request IDs, and JSON request logs.
 - Validated investigation request/response contracts in OpenAPI.
 - PostgreSQL + pgvector with a repeatable migration runner.
+- Streaming Amazon review inspection, coverage profiling, validation and repeatable PostgreSQL imports.
 - A non-root Docker application image and local Docker Compose services.
 - GitHub checks, real database integration tests, infrastructure validation, container
   smoke tests, and opt-in AWS publishing/deployment.
 - Terraform for S3, ECR, IAM/OIDC, CloudWatch, and an optional ECS Express service.
 
-AI answers, ingestion, embeddings, approval, and the React frontend are integration
+AI answers, embeddings, approval, and the React frontend are integration
 points. They are not implemented or represented as working features. The investigation
 endpoint returns HTTP 501 until the AI owner connects it. Cloud RDS and Bedrock access
 are not provisioned by this first backbone milestone.
+
+## Amazon data ingestion
+
+Start with a 200-line streaming inspection; no database or model key is needed:
+
+```sh
+uv run python -m scripts.amazon_ingest inspect --limit 200 --report data/processed/inspection.json
+```
+
+See [pipelines/README.md](pipelines/README.md) for full profiling, product selection,
+PostgreSQL loading, cleaning rules, audit reports and coverage limitations. No complete
+raw dataset file is cached. Product metadata ingestion remains a separate next step.
 
 ## First run: Docker Desktop
 
