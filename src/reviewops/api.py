@@ -8,6 +8,8 @@ import uuid
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from reviewops.ai.investigate import investigate as run_investigation
+from reviewops.ai.kimi import InvestigationError
 from reviewops.analytics_routes import router as analytics_router
 from reviewops.config import get_settings
 from reviewops.contracts import InvestigationRequest, InvestigationResponse
@@ -74,12 +76,25 @@ async def readiness():
 @app.post(
     "/api/v1/investigations",
     response_model=InvestigationResponse,
-    responses={501: {"description": "AI workflow integration pending"}},
+    responses={
+        502: {"description": "Invalid or failed model response"},
+        503: {"description": "Database or model unavailable"},
+        504: {"description": "Model timeout"},
+    },
     tags=["investigations"],
 )
 def investigate(payload: InvestigationRequest):
-    # Person 1 connects the LangGraph workflow here. No fake model results.
-    raise HTTPException(status_code=501, detail="AI workflow integration pending")
+    settings = get_settings()
+    if settings.app_env != "local" and not (
+        settings.demo_api_key and settings.demo_api_key.get_secret_value()
+    ):
+        raise HTTPException(status_code=503, detail="Configure DEMO_API_KEY for hosted AI requests")
+    try:
+        return run_investigation(payload, settings)
+    except InvestigationError as exc:
+        raise HTTPException(
+            status_code=exc.status_code, detail={"code": exc.code, "message": str(exc)}
+        ) from None
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -90,6 +105,7 @@ def index():
     <style>body{font:18px system-ui;max-width:46rem;margin:10vh auto;padding:1.5rem;
     line-height:1.6;background:#f6f8fb;color:#14243b}a{color:#1463c0}</style>
     <h1>ReviewOPs</h1><p>The application backbone is running.</p>
-    <p>Review ingestion and SQL analysis are available. AI investigations await integration.</p>
+    <p>Review ingestion and SQL analysis are available.
+    Complaint investigations require a configured Kimi API key.</p>
     <p><a href="/docs">API contracts</a> · <a href="/healthz">Process health</a> ·
     <a href="/readyz">Database readiness</a></p></html>"""

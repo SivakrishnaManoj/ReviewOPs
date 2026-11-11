@@ -1,28 +1,15 @@
-"""Shared API contracts. Change these with both application owners' review."""
+"""HTTP boundary for bounded, evidence-grounded complaint investigations."""
 
-from datetime import date
-from typing import Self
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field
+
+from reviewops.ai.models import Action, Citation, Explanation, ModelRun
+from reviewops.analytics_contracts import EvidenceResults, Scope, Summary
 
 
-class InvestigationRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
-
+class InvestigationRequest(Scope):
     question: str = Field(min_length=1, max_length=2000)
-    product_ids: list[str] = Field(min_length=1, max_length=10)
-    date_from: date
-    date_to: date
-
-    @model_validator(mode="after")
-    def validate_scope(self) -> Self:
-        if self.date_from > self.date_to:
-            raise ValueError("date_from must be on or before date_to")
-        if any(not item.strip() or len(item) > 64 for item in self.product_ids):
-            raise ValueError("product_ids must be non-empty and at most 64 characters")
-        if len(set(self.product_ids)) != len(self.product_ids):
-            raise ValueError("product_ids must be unique")
-        return self
 
 
 class ReviewSource(BaseModel):
@@ -33,12 +20,35 @@ class ReviewSource(BaseModel):
 
 
 class Finding(BaseModel):
+    complaint_id: str
     statement: str
     source_ids: list[str] = Field(min_length=1)
+    citations: list[Citation] = Field(min_length=1)
+
+
+class EvidenceCoverage(BaseModel):
+    eligible_negative_text_reviews: int
+    selected_reviews: int
+    selection_limit: int = 20
+    all_eligible_reviews_selected: bool
+    truncated_excerpts: int
+
+
+class InvestigationPreview(BaseModel):
+    request: InvestigationRequest
+    metrics: Summary
+    evidence: EvidenceResults
+    coverage: EvidenceCoverage
 
 
 class InvestigationResponse(BaseModel):
     investigation_id: str
+    status: Literal["completed", "insufficient_evidence"]
     findings: list[Finding]
+    suggested_explanations: list[Explanation]
+    recommended_actions: list[Action]
     sources: list[ReviewSource]
+    metrics: Summary
+    coverage: EvidenceCoverage
+    model_run: ModelRun | None
     limitations: list[str]

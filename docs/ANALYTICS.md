@@ -83,12 +83,12 @@ transaction with a 10-second statement timeout and a 1-second lock timeout. Futu
 model adapters should call these typed tools rather than execute model-generated SQL.
 Runtime read-only transactions do not replace a least-privilege database role in deployment.
 
-## Next integration
+## AI integration
 
-Kimi can use these results to describe rating changes and cite supporting reviews.
-Complaint classification and its evaluation remain separate work. Reports should label
-reported complaints, possible explanations and recommended investigations distinctly.
-The investigation endpoint still returns 501 until that AI workflow is integrated.
+The [Kimi investigation workflow](INVESTIGATIONS.md) uses the SQL summary and bounded
+evidence lookup to produce cited complaints, separate hypotheses and recommended
+investigations. A model key is required; a preview command runs without a model call.
+Full-dataset complaint classification and its evaluation remain separate work.
 
 ## Validation
 
