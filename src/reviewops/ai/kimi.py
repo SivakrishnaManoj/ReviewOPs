@@ -74,11 +74,15 @@ class KimiClient:
                 {"role": "user", "content": json.dumps(evidence, ensure_ascii=False)},
             ],
             "response_format": {"type": "json_object"},
-            "max_tokens": 4096,
             "stream": False,
         }
-        if settings.kimi_model == "kimi-k2.6":
-            body["thinking"] = {"type": "disabled"}
+        if settings.kimi_model in {"kimi-k3", "kimi-k3.1-pro", "kimi-k3.1-pro-highspeed"}:
+            body["reasoning_effort"] = "low"
+            body["max_completion_tokens"] = 8192
+        else:
+            body["max_tokens"] = 4096
+            if settings.kimi_model == "kimi-k2.6":
+                body["thinking"] = {"type": "disabled"}
         request = Request(
             ENDPOINT,
             data=json.dumps(body).encode("utf-8"),

@@ -28,6 +28,8 @@ and whether excerpts were truncated. It makes no model request.
 Create a key in the [Kimi API Platform](https://platform.kimi.ai).
 Use a Moonshot API key with access to the selected model and billing enabled.
 The ordinary Kimi chat subscription is not used by this code.
+K3.1 Pro requires a successful account top-up (the documented minimum is $1).
+K2 models are unavailable to newly registered accounts. The default is now K3.1 Pro.
 Enter the key into PowerShell's hidden prompt so the literal secret does not enter
 your command history:
 
@@ -35,10 +37,14 @@ your command history:
 $kimiSecret = Read-Host "Moonshot API key" -AsSecureString
 $env:MOONSHOT_API_KEY = [System.Net.NetworkCredential]::new("", $kimiSecret).Password
 Remove-Variable kimiSecret
-$env:KIMI_MODEL = "kimi-k2.6"
+$env:KIMI_MODEL = "kimi-k3.1-pro"
 ~~~
 
-Alternatively, add these variables to your ignored local .env. Never paste a key in
+Alternatively, put MOONSHOT_API_KEY and KIMI_MODEL in the .env file at the repository
+root (C:\Users\sivkr\Desktop\ReviewOPs\.env on this setup), not .env.example.
+The local .env is ignored by Git. Existing process environment variables override it:
+replace any earlier KIMI_MODEL=kimi-k2.6 setting with kimi-k3.1-pro.
+Never paste a key in
 chat or commit it. Keys remain in process environment for that terminal session.
 Docker Compose does not automatically forward arbitrary host environment variables:
 use the native CLI/server for this milestone, or explicitly configure container
@@ -105,7 +111,7 @@ explanations, actions and model metadata.
   rate limits and connectivity failures are redacted; timeouts return 504.
 
 There are no automatic retries. Each invocation uses at most one model call with
-a 4,096 output-token cap, a socket timeout (default 60 seconds), and a 256 KiB
+an 8,192 completion-token cap (including reasoning) for K3 models, a socket timeout (default 60 seconds), and a 256 KiB
 response cap. The timeout is an I/O timeout, not a guaranteed end-to-end deadline.
 Inputs contain at most 20 excerpts of at most 1,000 characters each. Hosted use still
 needs per-user quotas, distributed rate limits and operational cost controls.
@@ -137,9 +143,13 @@ newest-review selection.
 Checked against the official documentation:
 
 - [API quickstart](https://platform.kimi.ai/docs/get-your-api-key)
-- [Kimi K2.6 parameters](https://platform.kimi.ai/docs/guide/kimi-k2-6-quickstart)
+- [Kimi K3.1 Pro](https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart)
+- [Model parameters](https://platform.kimi.ai/docs/api/models-overview)
 - [JSON mode](https://platform.kimi.ai/docs/guide/use-json-mode-feature-of-kimi-api)
 
-The adapter uses the official api.moonshot.ai endpoint with JSON mode. K2.6 runs
-with thinking disabled and default sampling parameters. KIMI_MODEL can be changed;
-other models keep provider reasoning defaults and may need a different output budget.
+The adapter uses the official api.moonshot.ai endpoint with JSON mode. K3 models
+use reasoning_effort=low and max_completion_tokens=8192, without the K2 thinking
+parameter or explicit sampling settings. The legacy K2.6 override retains thinking
+disabled and max_tokens=4096 for existing accounts. Live model quality and latency
+still need validation; an output cap may produce an incomplete report, which is
+rejected without an automatic retry.
