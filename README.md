@@ -12,6 +12,7 @@ Create feature branches from `main` and use pull requests for subsequent changes
 - Validated investigation request/response contracts in OpenAPI.
 - PostgreSQL + pgvector with a repeatable migration runner.
 - Streaming Amazon review inspection, coverage profiling, validation and repeatable PostgreSQL imports.
+- Read-only SQL summaries, monthly trends, period comparisons and supporting-review text lookup.
 - A non-root Docker application image and local Docker Compose services.
 - GitHub checks, real database integration tests, infrastructure validation, container
   smoke tests, and opt-in AWS publishing/deployment.
@@ -33,6 +34,13 @@ uv run python -m scripts.amazon_ingest inspect --limit 200 --report data/process
 See [pipelines/README.md](pipelines/README.md) for full profiling, product selection,
 PostgreSQL loading, cleaning rules, audit reports and coverage limitations. No complete
 raw dataset file is cached. Product metadata ingestion remains a separate next step.
+
+## Review analysis
+
+After ingestion, use the SQL tools from the CLI or API. Counts and percentages include
+their scope and denominator; the LLM does not calculate them. See
+[docs/ANALYTICS.md](docs/ANALYTICS.md) for commands, HTTP endpoints and interpretation.
+These tools do not yet classify complaints or generate AI investigations.
 
 ## First run: Docker Desktop
 

@@ -8,6 +8,7 @@ import uuid
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 
+from reviewops.analytics_routes import router as analytics_router
 from reviewops.config import get_settings
 from reviewops.contracts import InvestigationRequest, InvestigationResponse
 from reviewops.db import check_database
@@ -16,6 +17,7 @@ logger = logging.getLogger("reviewops.requests")
 logging.basicConfig(level=get_settings().log_level, format="%(message)s")
 
 app = FastAPI(title="ReviewOPs", version="0.1.0")
+app.include_router(analytics_router)
 
 
 @app.middleware("http")
@@ -88,6 +90,6 @@ def index():
     <style>body{font:18px system-ui;max-width:46rem;margin:10vh auto;padding:1.5rem;
     line-height:1.6;background:#f6f8fb;color:#14243b}a{color:#1463c0}</style>
     <h1>ReviewOPs</h1><p>The application backbone is running.</p>
-    <p>Review ingestion, retrieval, and the AI workflow are awaiting integration.</p>
+    <p>Review ingestion and SQL analysis are available. AI investigations await integration.</p>
     <p><a href="/docs">API contracts</a> · <a href="/healthz">Process health</a> ·
     <a href="/readyz">Database readiness</a></p></html>"""
