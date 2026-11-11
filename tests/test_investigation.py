@@ -246,8 +246,11 @@ def test_kimi_payload_is_bounded_and_uses_json_mode():
     payload = json.loads(sent.data)
     assert sent.full_url == "https://api.moonshot.ai/v1/chat/completions"
     assert payload["response_format"] == {"type": "json_object"}
-    assert payload["max_tokens"] == 4096
-    assert payload["thinking"] == {"type": "disabled"}
+    assert payload["model"] == "kimi-k3.1-pro"
+    assert payload["max_completion_tokens"] == 8192
+    assert payload["reasoning_effort"] == "low"
+    assert "max_tokens" not in payload
+    assert "thinking" not in payload
     assert "temperature" not in payload
     assert "tools" not in payload
     assert "untrusted" in payload["messages"][0]["content"]
@@ -355,3 +358,33 @@ def test_cli_preview_and_missing_key_exit_codes(monkeypatch, capsys):
     monkeypatch.setattr("scripts.investigate.investigate", fail)
     assert main(arguments) == 1
     assert json.loads(capsys.readouterr().out)["code"] == "model_not_configured"
+
+
+@pytest.mark.parametrize("model", ["kimi-k3", "kimi-k3.1-pro-highspeed", "kimi-k2.6"])
+def test_model_family_parameters_do_not_mix(model):
+    transport = Mock(return_value=io.BytesIO(envelope()))
+    KimiClient(
+        Settings(moonshot_api_key="synthetic-key", kimi_model=model), transport=transport
+    ).analyse({})
+    body = json.loads(transport.call_args.args[0].data)
+    if model == "kimi-k2.6":
+        assert body["thinking"] == {"type": "disabled"}
+        assert body["max_tokens"] == 4096
+        assert "reasoning_effort" not in body
+        assert "max_completion_tokens" not in body
+    else:
+        assert body["reasoning_effort"] == "low"
+        assert body["max_completion_tokens"] == 8192
+        assert "thinking" not in body
+        assert "max_tokens" not in body
+
+
+def test_local_dotenv_loads_key_and_environment_overrides_old_model(monkeypatch, tmp_path):
+    (tmp_path / ".env").write_text(
+        "MOONSHOT_API_KEY=synthetic-local-key\nKIMI_MODEL=kimi-k2.6\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("KIMI_MODEL", "kimi-k3.1-pro")
+    settings = Settings()
+    assert settings.moonshot_api_key.get_secret_value() == "synthetic-local-key"
+    assert "synthetic-local-key" not in repr(settings)
+    assert settings.kimi_model == "kimi-k3.1-pro"

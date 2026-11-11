@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     build_sha: str = "local"
     moonshot_api_key: SecretStr | None = None
-    kimi_model: str = Field(default="kimi-k2.6", min_length=1, max_length=100)
+    kimi_model: str = Field(default="kimi-k3.1-pro", min_length=1, max_length=100)
     kimi_timeout_seconds: int = Field(default=60, ge=5, le=120)
 
 
