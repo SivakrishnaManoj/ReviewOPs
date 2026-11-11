@@ -97,20 +97,6 @@ uv run python scripts/smoke.py http://localhost:8000
 Dependencies are pinned in `uv.lock`; Terraform providers in `infra/.terraform.lock.hcl`.
 When adding a dependency, edit `pyproject.toml`, run `uv lock`, and commit both files.
 
-## Team ownership
-
-| Owner | Files |
-| --- | --- |
-| Siva. - cloud and delivery | `infra/`, `.github/`, `Dockerfile`, `compose.yaml`, deployment scripts |
-| AI/application Johann J | `src/reviewops/ai/`, API integration, `web/` |
-| Data/retrieval Sweta A | `pipelines/`, `src/reviewops/retrieval/`, ingestion and index migrations |
-| Shared, agree before changing | `contracts.py`, schema migrations, `pyproject.toml`, `uv.lock` |
-
-Use branches such as `feat/agent-workflow`, `feat/retrieval`, and `chore/cloud-backbone`.
-Each person opens a PR into `main`; see [CONTRIBUTING.md](CONTRIBUTING.md).
-The first shared milestone is one real question answered with a source citation on the
-deployed app. Work against the contract rather than independently changing its shape.
-
 ## Cloud setup
 
 Follow [docs/CLOUD_SETUP.md](docs/CLOUD_SETUP.md) in order. AWS delivery is disabled by
