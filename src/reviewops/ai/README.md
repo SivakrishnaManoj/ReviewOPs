@@ -1,9 +1,17 @@
-# AI owner
+# Complaint investigation workflow
 
-Implement the LangGraph workflow here and wire it into `reviewops.api.investigate`.
-Use `reviewops.contracts` for the HTTP boundary. Keep model calls behind an interface
-so unit tests can run without cloud credentials. Persist checkpoints in PostgreSQL.
-Approval and task creation must be separate nodes; make writes idempotent.
+investigate.py orchestrates SQL evidence preparation, a single Kimi call and strict
+citation checks. kimi.py is the replaceable model adapter; models.py defines its
+bounded JSON output. The HTTP boundary remains in reviewops.contracts.
 
-Add LangGraph and model SDK dependencies to the root `pyproject.toml`, then run
-`uv lock` and commit `uv.lock` together. Coordinate any schema changes with the data owner.
+SQL metrics never come from the model. Unknown IDs, fabricated quotes, malformed
+output and broken complaint references fail closed. Exact quotes are not proof of
+semantic entailment; human evaluation remains necessary.
+
+See [the investigation guide](../../../docs/INVESTIGATIONS.md) for setup and limits.
+Tests mock the model and use synthetic fixtures; no API key is needed in CI.
+
+This milestone uses deterministic orchestration without LangGraph or checkpointing.
+Later additions can wrap these stages in graph nodes, persist versioned complaint
+labels, evaluate quality and add approval/task creation as separate idempotent steps.
+No external action is performed by the current model workflow.

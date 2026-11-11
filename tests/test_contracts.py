@@ -17,7 +17,10 @@ from reviewops.contracts import InvestigationRequest
 )
 def test_invalid_scope_is_rejected(changes):
     payload = dict(
-        question="Investigate this", product_ids=["p"], date_from="2022-01-01", date_to="2022-12-31"
+        question="Investigate this",
+        product_ids=["B000000001"],
+        date_from="2022-01-01",
+        date_to="2022-12-31",
     )
     with pytest.raises(ValidationError):
         InvestigationRequest(**(payload | changes))

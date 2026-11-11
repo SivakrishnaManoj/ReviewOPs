@@ -13,15 +13,16 @@ Create feature branches from `main` and use pull requests for subsequent changes
 - PostgreSQL + pgvector with a repeatable migration runner.
 - Streaming Amazon review inspection, coverage profiling, validation and repeatable PostgreSQL imports.
 - Read-only SQL summaries, monthly trends, period comparisons and supporting-review text lookup.
+- Kimi complaint investigations with quote validation, separate hypotheses/actions, and SQL metrics.
 - A non-root Docker application image and local Docker Compose services.
 - GitHub checks, real database integration tests, infrastructure validation, container
   smoke tests, and opt-in AWS publishing/deployment.
 - Terraform for S3, ECR, IAM/OIDC, CloudWatch, and an optional ECS Express service.
 
-AI answers, embeddings, approval, and the React frontend are integration
-points. They are not implemented or represented as working features. The investigation
-endpoint returns HTTP 501 until the AI owner connects it. Cloud RDS and Bedrock access
-are not provisioned by this first backbone milestone.
+Investigations require a local Moonshot API key. The adapter and evidence checks are
+tested offline; live model quality still needs evaluation on labelled examples.
+Embeddings, persisted complaint labels, approval, and the React frontend remain
+unimplemented. Cloud RDS and Bedrock access are not provisioned.
 
 ## Amazon data ingestion
 
@@ -40,7 +41,9 @@ raw dataset file is cached. Product metadata ingestion remains a separate next s
 After ingestion, use the SQL tools from the CLI or API. Counts and percentages include
 their scope and denominator; the LLM does not calculate them. See
 [docs/ANALYTICS.md](docs/ANALYTICS.md) for commands, HTTP endpoints and interpretation.
-These tools do not yet classify complaints or generate AI investigations.
+For complaint investigations, see [docs/INVESTIGATIONS.md](docs/INVESTIGATIONS.md).
+The workflow selects bounded evidence, calls Kimi once and validates citations.
+It does not yet classify every review or calculate complaint-theme percentages.
 
 ## First run: Docker Desktop
 

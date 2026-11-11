@@ -47,7 +47,7 @@ def test_database_readiness(monkeypatch):
         assert client.get("/readyz").json() == {"status": "ready", "database": "connected"}
 
 
-def test_contract_is_exposed_and_stub_is_explicit():
+def test_contract_is_exposed_and_missing_database_is_explicit():
     with TestClient(app) as client:
         schema = client.get("/openapi.json").json()
         assert "/api/v1/investigations" in schema["paths"]
@@ -55,12 +55,13 @@ def test_contract_is_exposed_and_stub_is_explicit():
             "/api/v1/investigations",
             json={
                 "question": "What needs investigation?",
-                "product_ids": ["EXAMPLE1"],
+                "product_ids": ["B000000001"],
                 "date_from": "2022-01-01",
                 "date_to": "2022-12-31",
             },
         )
-        assert response.status_code == 501
+        assert response.status_code == 503
+        assert response.json()["detail"]["code"] == "database_not_configured"
 
 
 def test_api_key_guards_future_workflow_but_not_health(monkeypatch):
