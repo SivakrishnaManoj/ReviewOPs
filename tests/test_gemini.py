@@ -49,9 +49,9 @@ def test_gemini_request_and_usage():
     assert "synthetic-secret" not in sent.full_url
     assert sent.get_header("X-goog-api-key") == "synthetic-secret"
     assert body["generationConfig"] == {
-        "responseMimeType": "application/json",
+        "responseFormat": {"text": {"mimeType": "APPLICATION_JSON"}},
         "maxOutputTokens": 8192,
-        "thinkingConfig": {"thinkingLevel": "low"},
+        "thinkingConfig": {"thinkingLevel": "LOW"},
     }
     assert "untrusted" in body["systemInstruction"]["parts"][0]["text"]
     assert "tools" not in body
@@ -106,6 +106,10 @@ def test_bad_output_fails_closed(raw):
 @pytest.mark.parametrize(
     ("error", "code"),
     [
+        (
+            HTTPError("https://example", 400, "synthetic-secret", {}, None),
+            "provider_invalid_request",
+        ),
         (
             HTTPError("https://example", 401, "synthetic-secret", {}, None),
             "provider_authentication",

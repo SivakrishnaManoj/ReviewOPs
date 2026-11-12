@@ -28,9 +28,12 @@ class GeminiClient:
             raise InvestigationError(
                 "model_not_configured", "Set GEMINI_API_KEY in your local .env to run Gemini.", 503
             )
-        generation = {"responseMimeType": "application/json", "maxOutputTokens": 8192}
+        generation = {
+            "responseFormat": {"text": {"mimeType": "APPLICATION_JSON"}},
+            "maxOutputTokens": 8192,
+        }
         if settings.gemini_model.startswith("gemini-3"):
-            generation["thinkingConfig"] = {"thinkingLevel": "low"}
+            generation["thinkingConfig"] = {"thinkingLevel": "LOW"}
         body = {
             "systemInstruction": {
                 "parts": [
@@ -106,6 +109,12 @@ class GeminiClient:
             return Completion(draft, run)
         except HTTPError as exc:
             exc.close()
+            if exc.code == 400:
+                raise InvestigationError(
+                    "provider_invalid_request",
+                    "Gemini rejected the request (HTTP 400). Check the model, API key "
+                    "and supported generation settings.",
+                ) from None
             if exc.code in (401, 403):
                 raise InvestigationError(
                     "provider_authentication", "Gemini rejected the API key or model access.", 503
@@ -122,7 +131,9 @@ class GeminiClient:
                     "Gemini model unavailable; check GEMINI_MODEL and AI Studio model access.",
                     503,
                 ) from None
-            raise InvestigationError("provider_error", "Gemini request failed.") from None
+            raise InvestigationError(
+                "provider_error", f"Gemini request failed (HTTP {exc.code})."
+            ) from None
         except TimeoutError:
             raise InvestigationError("provider_timeout", "Gemini request timed out.", 504) from None
         except URLError as exc:
