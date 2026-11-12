@@ -1,7 +1,7 @@
 # Complaint investigation workflow
 
-investigate.py orchestrates SQL evidence preparation, a single Kimi call and strict
-citation checks. kimi.py is the replaceable model adapter; models.py defines its
+investigate.py orchestrates SQL evidence preparation, a single configured model call and strict
+citation checks. gemini.py is the default adapter; kimi.py remains optional; models.py defines its
 bounded JSON output. The HTTP boundary remains in reviewops.contracts.
 
 SQL metrics never come from the model. Unknown IDs, fabricated quotes, malformed

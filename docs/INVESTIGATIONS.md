@@ -1,7 +1,7 @@
-# Kimi complaint investigations
+# Complaint investigations with Gemini
 
 The pipeline is explicit: validate scope, fetch SQL metrics and evidence in one
-read-only snapshot, close the database connection, call Kimi once, validate the
+read-only snapshot, close the database connection, call the selected model once, validate the
 structured result and citations, then attach the original SQL metrics.
 
 This is a deterministic workflow, not yet a LangGraph agent, semantic retriever or
@@ -23,40 +23,37 @@ $env:DATABASE_URL = "postgresql://reviewops:local-development-only@127.0.0.1:154
 The preview shows metrics, eligible negative text-review count, selected reviews
 and whether excerpts were truncated. It makes no model request.
 
-## Configure Kimi locally
+## Configure Gemini locally
 
-Create a key in the [Kimi API Platform](https://platform.kimi.ai).
-Use a Moonshot API key with access to the selected model and billing enabled.
-The ordinary Kimi chat subscription is not used by this code.
-K3.1 Pro requires a successful account top-up (the documented minimum is $1).
-K2 models are unavailable to newly registered accounts. The default is now K3.1 Pro.
-Enter the key into PowerShell's hidden prompt so the literal secret does not enter
-your command history:
+Open the repository-root .env file (not .env.example) and add:
 
-~~~powershell
-$kimiSecret = Read-Host "Moonshot API key" -AsSecureString
-$env:MOONSHOT_API_KEY = [System.Net.NetworkCredential]::new("", $kimiSecret).Password
-Remove-Variable kimiSecret
-$env:KIMI_MODEL = "kimi-k3.1-pro"
+~~~dotenv
+LLM_PROVIDER=gemini
+GEMINI_API_KEY=your-google-ai-studio-key
+GEMINI_MODEL=gemini-3.8-flash
 ~~~
 
-Alternatively, put MOONSHOT_API_KEY and KIMI_MODEL in the .env file at the repository
-root (C:\Users\sivkr\Desktop\ReviewOPs\.env on this setup), not .env.example.
-The local .env is ignored by Git. Existing process environment variables override it:
-replace any earlier KIMI_MODEL=kimi-k2.6 setting with kimi-k3.1-pro.
-Never paste a key in
-chat or commit it. Keys remain in process environment for that terminal session.
-Docker Compose does not automatically forward arbitrary host environment variables:
-use the native CLI/server for this milestone, or explicitly configure container
-secrets before deploying.
+Keep DATABASE_URL pointing to your existing local database. Do not paste keys into
+chat or commit them. .env is ignored by Git. Process environment variables override
+.env, so remove any old LLM_PROVIDER, GEMINI_MODEL or GEMINI_API_KEY overrides.
 
-## Generate the report: one paid model call
+Use a key from your free-tier [Google AI Studio project](https://aistudio.google.com/api-keys).
+Google currently lists standard Gemini 3.8 Flash input/output as free on the free
+tier, subject to project quotas. Model selection does not enforce free billing:
+a paid-tier project follows Google's paid pricing. This code never upgrades billing
+or automatically switches providers. A 429 may mean exhausted quota, not just a
+short-lived rate limit; check AI Studio before retrying.
 
-This sends your question, selected review excerpts, product IDs, review IDs, dates
-and coverage metadata to Moonshot. Database credentials are never sent to the model.
+Docker Compose does not automatically forward these settings. Use the native CLI
+for this setup; configure container secrets explicitly before deploying.
+
+## Generate the report: one model call
+
+This sends the question, selected excerpts, review/product IDs, dates and coverage
+metadata to Google. Database credentials are never sent.
 
 ~~~powershell
-.\.venv\Scripts\python.exe -m scripts.investigate --product-id B08L5KN7X4 --date-from 2023-01-01 --date-to 2023-01-31
+.\\.venv\\Scripts\\python.exe -m scripts.investigate --product-id B08L5KN7X4 --date-from 2023-01-01 --date-to 2023-01-31
 ~~~
 
 Optional: provide --question with a scoped complaint question. Product IDs and dates
@@ -92,7 +89,7 @@ Start the native server after setting the environment variables:
 POST /api/v1/investigations accepts question, product_ids, date_from and date_to.
 Use http://localhost:8000/docs for the schema. When DEMO_API_KEY is set, include it
 in the X-API-Key header. Non-local APP_ENV values require a nonempty DEMO_API_KEY
-before the paid endpoint will run. Keep the native development server on localhost.
+before the model endpoint will run. Keep the native development server on localhost.
 
 Request validation now uses the same Amazon scope rules as analytics: 1–10 unique
 ten-character parent ASINs and an inclusive UTC date range of at most 366 days.
@@ -111,7 +108,7 @@ explanations, actions and model metadata.
   rate limits and connectivity failures are redacted; timeouts return 504.
 
 There are no automatic retries. Each invocation uses at most one model call with
-an 8,192 completion-token cap (including reasoning) for K3 models, a socket timeout (default 60 seconds), and a 256 KiB
+an 8,192 completion-token cap (including reasoning) for Gemini and K3 models, a socket timeout (default 60 seconds), and a 256 KiB
 response cap. The timeout is an I/O timeout, not a guaranteed end-to-end deadline.
 Inputs contain at most 20 excerpts of at most 1,000 characters each. Hosted use still
 needs per-user quotas, distributed rate limits and operational cost controls.
@@ -138,18 +135,18 @@ Full complaint percentages need a separate classification stage with stored,
 versioned labels, evaluation, and SQL aggregation. Do not calculate them from this
 newest-review selection.
 
-## Provider references
+## Provider configuration and references
 
-Checked against the official documentation:
+Gemini uses the native generateContent endpoint, with the key in an HTTP header,
+JSON mode and local Pydantic schema validation. Gemini 3 models use low thinking.
+Usage completion_tokens records candidate output tokens; total_tokens also includes
+thinking when reported by Google. Missing usage remains null.
+JSON mode is not a guarantee of schema validity or factual accuracy.
 
-- [API quickstart](https://platform.kimi.ai/docs/get-your-api-key)
-- [Kimi K3.1 Pro](https://platform.kimi.ai/docs/guide/kimi-k3-1-pro-quickstart)
-- [Model parameters](https://platform.kimi.ai/docs/api/models-overview)
-- [JSON mode](https://platform.kimi.ai/docs/guide/use-json-mode-feature-of-kimi-api)
+- [Gemini text generation](https://ai.google.dev/gemini-api/docs/text-generation)
+- [Gemini pricing](https://ai.google.dev/gemini-api/docs/pricing)
+- [Gemini structured output](https://ai.google.dev/gemini-api/docs/structured-output)
 
-The adapter uses the official api.moonshot.ai endpoint with JSON mode. K3 models
-use reasoning_effort=low and max_completion_tokens=8192, without the K2 thinking
-parameter or explicit sampling settings. The legacy K2.6 override retains thinking
-disabled and max_tokens=4096 for existing accounts. Live model quality and latency
-still need validation; an output cap may produce an incomplete report, which is
-rejected without an automatic retry.
+To explicitly use the existing paid Kimi adapter, set LLM_PROVIDER=moonshot,
+MOONSHOT_API_KEY and KIMI_MODEL=kimi-k3.1-pro. There is no provider fallback.
+The Kimi adapter retains its existing K3 and legacy K2.6 parameter handling.

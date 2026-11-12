@@ -42,7 +42,7 @@ class ModelUsage(StrictModel):
 
 
 class ModelRun(BaseModel):
-    provider: Literal["moonshot"] = "moonshot"
+    provider: Literal["moonshot", "google"] = "moonshot"
     model: str
     prompt_version: str
     latency_ms: int
