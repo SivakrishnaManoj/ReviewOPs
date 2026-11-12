@@ -20,7 +20,16 @@ from scripts.investigate import main
 @pytest.fixture(autouse=True)
 def isolated_settings(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
-    for key in ("DATABASE_URL", "DEMO_API_KEY", "MOONSHOT_API_KEY", "KIMI_MODEL", "APP_ENV"):
+    for key in (
+        "DATABASE_URL",
+        "DEMO_API_KEY",
+        "MOONSHOT_API_KEY",
+        "KIMI_MODEL",
+        "APP_ENV",
+        "LLM_PROVIDER",
+        "GEMINI_API_KEY",
+        "GEMINI_MODEL",
+    ):
         monkeypatch.delenv(key, raising=False)
     get_settings.cache_clear()
     yield
@@ -168,7 +177,7 @@ def test_invented_evidence_and_broken_references_fail_closed(bad):
         value["recommended_actions"][0]["complaint_ids"] = ["c5"]
     model = Mock()
     model.analyse.return_value = completion(value)
-    with pytest.raises(InvestigationError, match="Kimi") as err:
+    with pytest.raises(InvestigationError, match="Model") as err:
         investigate(request(), Settings(), model=model, preview=preview())
     assert err.value.code == "invalid_citations"
     model.analyse.assert_called_once()

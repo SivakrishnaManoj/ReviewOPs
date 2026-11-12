@@ -1,4 +1,4 @@
-"""Preview SQL evidence, or request one paid Kimi investigation."""
+"""Preview SQL evidence, or request one model investigation."""
 
 import argparse
 import json
@@ -19,7 +19,9 @@ def main(argv=None):
     parser.add_argument(
         "--question", default="What complaints were reported, and what should we investigate first?"
     )
-    parser.add_argument("--preview", action="store_true", help="Show evidence without calling Kimi")
+    parser.add_argument(
+        "--preview", action="store_true", help="Show evidence without calling the model"
+    )
     args = parser.parse_args(argv)
     try:
         request = InvestigationRequest(

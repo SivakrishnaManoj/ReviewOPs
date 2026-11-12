@@ -106,6 +106,6 @@ def index():
     line-height:1.6;background:#f6f8fb;color:#14243b}a{color:#1463c0}</style>
     <h1>ReviewOPs</h1><p>The application backbone is running.</p>
     <p>Review ingestion and SQL analysis are available.
-    Complaint investigations require a configured Kimi API key.</p>
+    Complaint investigations require a configured model API key.</p>
     <p><a href="/docs">API contracts</a> · <a href="/healthz">Process health</a> ·
     <a href="/readyz">Database readiness</a></p></html>"""

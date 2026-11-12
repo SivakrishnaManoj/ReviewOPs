@@ -4,6 +4,7 @@ import uuid
 
 import psycopg
 
+from reviewops.ai.gemini import GeminiClient
 from reviewops.ai.kimi import InvestigationError, KimiClient
 from reviewops.analytics import analytics_session
 from reviewops.analytics_contracts import ReviewSearch, Scope
@@ -14,6 +15,10 @@ from reviewops.contracts import (
     InvestigationResponse,
     ReviewSource,
 )
+
+
+def configured_model(settings):
+    return GeminiClient(settings) if settings.llm_provider == "gemini" else KimiClient(settings)
 
 
 def prepare(request, settings):
@@ -54,7 +59,7 @@ def validate_evidence(draft, evidence):
     excerpts = {review.review_id: review.excerpt for review in evidence.reviews}
     ids = [item.complaint_id for item in draft.reported_complaints]
     if len(ids) != len(set(ids)):
-        raise InvestigationError("invalid_citations", "Kimi returned duplicate complaint IDs.")
+        raise InvestigationError("invalid_citations", "Model returned duplicate complaint IDs.")
     for complaint in draft.reported_complaints:
         for citation in complaint.citations:
             if (
@@ -62,11 +67,11 @@ def validate_evidence(draft, evidence):
                 or citation.quote not in excerpts[citation.review_id]
             ):
                 raise InvestigationError(
-                    "invalid_citations", "Kimi cited an unknown review or a non-verbatim quote."
+                    "invalid_citations", "Model cited an unknown review or a non-verbatim quote."
                 )
     for item in [*draft.suggested_explanations, *draft.recommended_actions]:
         if not set(item.complaint_ids).issubset(ids):
-            raise InvestigationError("invalid_citations", "Kimi referenced an unknown complaint.")
+            raise InvestigationError("invalid_citations", "Model referenced an unknown complaint.")
 
 
 def investigate(request, settings, model=None, preview=None):
@@ -91,7 +96,7 @@ def investigate(request, settings, model=None, preview=None):
     findings, explanations, actions = [], [], []
     model_run = None
     if preview.evidence.reviews:
-        completion = (model or KimiClient(settings)).analyse(model_input(preview))
+        completion = (model or configured_model(settings)).analyse(model_input(preview))
         validate_evidence(completion.draft, preview.evidence)
         model_run = completion.run
         findings = [
