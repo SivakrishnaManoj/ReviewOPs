@@ -1,4 +1,4 @@
-FROM python:3.12-slim AS builder
+FROM python:3.15-slim AS builder
 COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /usr/local/bin/uv
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 WORKDIR /app
@@ -7,7 +7,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 COPY src ./src
 RUN uv sync --frozen --no-dev
 
-FROM python:3.12-slim AS runtime
+FROM python:3.15-slim AS runtime
 ARG BUILD_SHA=local
 ENV PATH="/app/.venv/bin:$PATH" PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 \
     BUILD_SHA=$BUILD_SHA
